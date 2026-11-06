@@ -1,6 +1,5 @@
 # language: Python, file: app.py, target: My Robi auto-claim hub
-# Optimized for Docker/Render. Collects Robi Coins daily (check-in + tasks).
-# All config baked in as defaults. Base URL is the real API host.
+# Free tier optimized. Supports account import/export for ephemeral storage.
 
 import os
 import sys
@@ -15,9 +14,6 @@ from typing import Optional, Tuple, List, Dict, Any
 import requests
 from flask import Flask, request, jsonify, send_file
 
-# ============================================================================
-# CONFIG
-# ============================================================================
 CONFIG = {
     "DATA_DIR":        os.environ.get("DATA_DIR", "/data"),
     "SECRET_KEY":      os.environ.get("SECRET_KEY", "myrobi-autoclaim-key-2026"),
@@ -25,7 +21,6 @@ CONFIG = {
     "CRON_SECRET":     os.environ.get("CRON_SECRET", ""),
     "PORT":            int(os.environ.get("PORT", "8080")),
 
-    # Robi API
     "ROBI_BASE_URL":       os.environ.get("ROBI_BASE_URL",       "https://webapi.robi.com.bd"),
     "ROBI_OTP_REQUEST":    os.environ.get("ROBI_OTP_REQUEST",    "/v1/auth/otp/request"),
     "ROBI_OTP_VERIFY":     os.environ.get("ROBI_OTP_VERIFY",     "/v1/auth/otp/verify"),
@@ -62,42 +57,28 @@ except Exception:
 ACCOUNTS_FILE = os.path.join(DATA_DIR, "accounts.json")
 
 ROBI_ENDPOINTS = {
-    "base":           CONFIG["ROBI_BASE_URL"],
-    "otp_request":    CONFIG["ROBI_OTP_REQUEST"],
-    "otp_verify":     CONFIG["ROBI_OTP_VERIFY"],
-    "token_refresh":  CONFIG["ROBI_TOKEN_REFRESH"],
-    "profile":        CONFIG["ROBI_PROFILE"],
-    "points_balance": CONFIG["ROBI_POINTS_BALANCE"],
-    "tasks_list":     CONFIG["ROBI_TASKS_LIST"],
-    "checkin":        CONFIG["ROBI_CHECKIN"],
-    "claim_task":     CONFIG["ROBI_CLAIM_TASK"],
-    "rewards_list":   CONFIG["ROBI_REWARDS_LIST"],
-    "redeem":         CONFIG["ROBI_REDEEM"],
-    "history":        CONFIG["ROBI_HISTORY"],
+    "base":           CONFIG["ROBI_BASE_URL"], "otp_request":    CONFIG["ROBI_OTP_REQUEST"],
+    "otp_verify":     CONFIG["ROBI_OTP_VERIFY"], "token_refresh":  CONFIG["ROBI_TOKEN_REFRESH"],
+    "profile":        CONFIG["ROBI_PROFILE"], "points_balance": CONFIG["ROBI_POINTS_BALANCE"],
+    "tasks_list":     CONFIG["ROBI_TASKS_LIST"], "checkin":        CONFIG["ROBI_CHECKIN"],
+    "claim_task":     CONFIG["ROBI_CLAIM_TASK"], "rewards_list":   CONFIG["ROBI_REWARDS_LIST"],
+    "redeem":         CONFIG["ROBI_REDEEM"], "history":        CONFIG["ROBI_HISTORY"],
 }
 
 ROBI_HEADERS = {
-    "user_agent":    CONFIG["ROBI_UA"],
-    "msisdn_header": CONFIG["ROBI_MSISDN_HEADER"],
-    "device_header": CONFIG["ROBI_DEVICE_HEADER"],
-    "app_version":   CONFIG["ROBI_APP_VERSION"],
+    "user_agent": CONFIG["ROBI_UA"], "msisdn_header": CONFIG["ROBI_MSISDN_HEADER"],
+    "device_header": CONFIG["ROBI_DEVICE_HEADER"], "app_version": CONFIG["ROBI_APP_VERSION"],
 }
 
-def get_bd_now() -> datetime:
-    return datetime.now(timezone(timedelta(hours=6)))
-
+def get_bd_now() -> datetime: return datetime.now(timezone(timedelta(hours=6)))
 def normalize_msisdn(phone: str) -> str:
     cleaned = "".join(filter(str.isdigit, str(phone)))
     if cleaned.startswith("880") and len(cleaned) == 13: return cleaned
     if cleaned.startswith("0") and len(cleaned) == 11: return "88" + cleaned
     if len(cleaned) == 10 and cleaned.startswith("1"): return "880" + cleaned
     return cleaned
-
-def get_device_id(msisdn: str) -> str:
-    return hashlib.md5(f"myrobi_device_{msisdn}".encode()).hexdigest()[:16]
-
-def today_str() -> str:
-    return get_bd_now().strftime("%Y-%m-%d")
+def get_device_id(msisdn: str) -> str: return hashlib.md5(f"myrobi_device_{msisdn}".encode()).hexdigest()[:16]
+def today_str() -> str: return get_bd_now().strftime("%Y-%m-%d")
 
 activity_logs: List[Dict[str, Any]] = []
 
@@ -115,19 +96,15 @@ def load_accounts() -> Dict[str, Any]:
     try:
         with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if isinstance(data, list):
-                return {normalize_msisdn(a.get("msisdn", "")): a for a in data if a.get("msisdn")}
+            if isinstance(data, list): return {normalize_msisdn(a.get("msisdn", "")): a for a in data if a.get("msisdn")}
             return data if isinstance(data, dict) else {}
     except Exception as e:
-        add_log(f"Error reading accounts.json: {e}", "ERROR")
-        return {}
+        add_log(f"Error reading accounts.json: {e}", "ERROR"); return {}
 
 def save_accounts(accounts: Dict[str, Any]):
     try:
-        with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(accounts, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        add_log(f"Error saving accounts.json: {e}", "ERROR")
+        with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f: json.dump(accounts, f, indent=2, ensure_ascii=False)
+    except Exception as e: add_log(f"Error saving accounts.json: {e}", "ERROR")
 
 def _points_from_body(body: dict) -> int:
     for k in ("points", "coins", "points_earned", "reward", "value"):
@@ -138,27 +115,18 @@ def _points_from_body(body: dict) -> int:
 
 class MyRobiClient:
     def __init__(self, msisdn: str, account_data: Optional[dict] = None):
-        self.msisdn = normalize_msisdn(msisdn)
-        self.data = account_data or {}
-        self.access_token = self.data.get("access_token")
-        self.refresh_token = self.data.get("refresh_token")
+        self.msisdn = normalize_msisdn(msisdn); self.data = account_data or {}
+        self.access_token = self.data.get("access_token"); self.refresh_token = self.data.get("refresh_token")
         self.device_id = self.data.get("device_id") or get_device_id(self.msisdn)
-        self.expire_at = self.data.get("expire_at", 0)
-        self.session = requests.Session()
-        self._set_headers()
+        self.expire_at = self.data.get("expire_at", 0); self.session = requests.Session(); self._set_headers()
 
     def _set_headers(self):
         headers = {
-            "User-Agent": ROBI_HEADERS["user_agent"],
-            ROBI_HEADERS["msisdn_header"]: self.msisdn,
-            ROBI_HEADERS["device_header"]: self.device_id,
-            "X-App-Version": ROBI_HEADERS["app_version"],
-            "Accept": "application/json",
-            "Content-Type": "application/json; charset=UTF-8",
-            "Accept-Language": "en",
+            "User-Agent": ROBI_HEADERS["user_agent"], ROBI_HEADERS["msisdn_header"]: self.msisdn,
+            ROBI_HEADERS["device_header"]: self.device_id, "X-App-Version": ROBI_HEADERS["app_version"],
+            "Accept": "application/json", "Content-Type": "application/json; charset=UTF-8", "Accept-Language": "en",
         }
-        if self.access_token:
-            headers["Authorization"] = f"Bearer {self.access_token}"
+        if self.access_token: headers["Authorization"] = f"Bearer {self.access_token}"
         self.session.headers.update(headers)
 
     def _url(self, key: str) -> str: return ROBI_ENDPOINTS["base"] + ROBI_ENDPOINTS[key]
@@ -167,8 +135,7 @@ class MyRobiClient:
 
     def is_token_expired(self) -> bool:
         if not self.access_token: return True
-        if self.expire_at and isinstance(self.expire_at, (int, float)) and self.expire_at > 0:
-            return time.time() >= (self.expire_at - 300)
+        if self.expire_at and isinstance(self.expire_at, (int, float)) and self.expire_at > 0: return time.time() >= (self.expire_at - 300)
         return False
 
     def refresh_auth_token(self) -> Tuple[bool, str]:
@@ -182,8 +149,7 @@ class MyRobiClient:
                 if new_refresh: self.refresh_token = new_refresh
                 expires_in = d.get("expires_in") or nested.get("expires_in")
                 if expires_in: self.expire_at = int(time.time() + expires_in)
-                self._set_headers()
-                return True, "refreshed"
+                self._set_headers(); return True, "refreshed"
             return False, f"{resp.status_code} {resp.text[:100]}"
         except Exception as e: return False, str(e)
 
@@ -228,9 +194,8 @@ class MyRobiClient:
         return []
 
     def checkin(self) -> Tuple[bool, dict, str]:
-        payload = {"msisdn": self.msisdn, "device_id": self.device_id}
         try:
-            resp = self._post("checkin", json=payload)
+            resp = self._post("checkin", json={"msisdn": self.msisdn, "device_id": self.device_id})
             body = resp.json() if resp.text else {}
             if resp.status_code in (200, 201):
                 ok = body.get("success") is True or str(body.get("status", "")).lower() in ("success", "ok", "true", "1") or (not body.get("error") and body.get("message"))
@@ -239,9 +204,8 @@ class MyRobiClient:
         except Exception as e: return False, {}, str(e)
 
     def claim_task(self, task_id: str) -> Tuple[bool, dict, str]:
-        payload = {"task_id": task_id, "msisdn": self.msisdn}
         try:
-            resp = self._post("claim_task", json=payload)
+            resp = self._post("claim_task", json={"task_id": task_id, "msisdn": self.msisdn})
             body = resp.json() if resp.text else {}
             if resp.status_code in (200, 201):
                 ok = body.get("success") is True or str(body.get("status", "")).lower() in ("success", "ok", "true", "1") or (not body.get("error") and body.get("message"))
@@ -253,66 +217,45 @@ def process_account_claim(client: MyRobiClient) -> dict:
     result = {"msisdn": client.msisdn, "actions": [], "success": True, "points_gained": 0, "error": None}
     if client.is_token_expired():
         ok, msg = client.refresh_auth_token()
-        if not ok:
-            result["success"] = False; result["error"] = f"token failed: {msg}"; return result
+        if not ok: result["success"] = False; result["error"] = f"token failed: {msg}"; return result
 
     ok, body, msg = client.checkin()
     result["actions"].append({"action": "daily_checkin", "success": ok, "message": msg, "raw": body})
     if ok: result["points_gained"] += _points_from_body(body)
 
-    accounts = load_accounts()
-    acc = accounts.get(client.msisdn, {})
-    today = today_str()
+    accounts = load_accounts(); acc = accounts.get(client.msisdn, {}); today = today_str()
     already = {h.get("task_id") for h in acc.get("claim_history", []) if h.get("date") == today and h.get("status") == "SUCCESS" and h.get("task_id")}
 
     for task in client.fetch_tasks():
         task_id = str(task.get("id") or task.get("task_id") or task.get("slug") or "")
         if not task_id or task_id in already: continue
-        status = str(task.get("status", "")).lower()
-        if status in ("locked", "unavailable", "expired", "claimed"): continue
+        if str(task.get("status", "")).lower() in ("locked", "unavailable", "expired", "claimed"): continue
         
         ok, body, msg = client.claim_task(task_id)
         result["actions"].append({"action": f"claim_task:{task_id}", "success": ok, "message": msg, "raw": body})
-        if ok:
-            already.add(task_id)
-            result["points_gained"] += _points_from_body(body)
+        if ok: already.add(task_id); result["points_gained"] += _points_from_body(body)
 
     if client.msisdn in accounts:
-        balance = client.fetch_points_balance()
-        points = 0
+        balance = client.fetch_points_balance(); points = 0
         for k in ("coins", "points", "balance", "total", "points_balance"):
             if balance.get(k):
                 try: points = int(balance[k]); break
                 except Exception: continue
-        acc = accounts[client.msisdn]
-        acc["coins_balance"] = points
-        acc["last_claim_at"] = get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD")
-        history = acc.get("claim_history", [])
-        time_str = get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD")
+        acc = accounts[client.msisdn]; acc["coins_balance"] = points; acc["last_claim_at"] = get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD")
+        history = acc.get("claim_history", []); time_str = get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD")
         
         for act in result["actions"]:
-            if act["success"]:
-                history.append({
-                    "date": today, "time": time_str, "action": act["action"],
-                    "task_id": act["action"].split(":", 1)[1] if ":" in act["action"] else None,
-                    "status": "SUCCESS", "message": act["message"],
-                })
-        acc["claim_history"] = history[-500:]
-        accounts[client.msisdn] = acc
-        save_accounts(accounts)
+            if act["success"]: history.append({"date": today, "time": time_str, "action": act["action"], "task_id": act["action"].split(":", 1)[1] if ":" in act["action"] else None, "status": "SUCCESS", "message": act["message"]})
+        acc["claim_history"] = history[-500:]; accounts[client.msisdn] = acc; save_accounts(accounts)
     return result
 
 def run_all_claims() -> dict:
     accounts = load_accounts()
     if not accounts: return {}
-    add_log(f"Batch claim: {len(accounts)} account(s)", "INFO")
     results = {}
     for msisdn, acc in accounts.items():
-        try:
-            client = MyRobiClient(msisdn, acc)
-            results[msisdn] = process_account_claim(client)
-        except Exception as e:
-            results[msisdn] = {"success": False, "error": str(e)}
+        try: results[msisdn] = process_account_claim(MyRobiClient(msisdn, acc))
+        except Exception as e: results[msisdn] = {"success": False, "error": str(e)}
     return results
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
@@ -327,120 +270,92 @@ def index():
 
 @app.route("/api/status")
 def api_status():
-    accounts = load_accounts()
-    out = []
-    today = today_str()
+    accounts = load_accounts(); out = []; today = today_str()
     for msisdn, acc in accounts.items():
-        history = acc.get("claim_history", [])
-        today_success = [h for h in history if h.get("date") == today and h.get("status") == "SUCCESS"]
-        out.append({
-            "msisdn": msisdn,
-            "coins_balance": acc.get("coins_balance", 0),
-            "claimed_today": len(today_success),
-            "is_done_today": bool(today_success),
-            "last_claim_at": acc.get("last_claim_at", ""),
-            "history": history[-25:],
-        })
-    now_bd = get_bd_now()
-    next_midnight = (now_bd + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-    return jsonify({
-        "success": True,
-        "current_bd_time": now_bd.strftime("%d-%b-%Y %I:%M:%S %p"),
-        "seconds_to_midnight": max(0, int((next_midnight - now_bd).total_seconds())),
-        "accounts": out, "total_accounts": len(out), "logs": activity_logs[-40:],
-    })
+        history = acc.get("claim_history", []); today_success = [h for h in history if h.get("date") == today and h.get("status") == "SUCCESS"]
+        out.append({"msisdn": msisdn, "coins_balance": acc.get("coins_balance", 0), "claimed_today": len(today_success), "is_done_today": bool(today_success), "last_claim_at": acc.get("last_claim_at", ""), "history": history[-25:]})
+    now_bd = get_bd_now(); next_midnight = (now_bd + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return jsonify({"success": True, "current_bd_time": now_bd.strftime("%d-%b-%Y %I:%M:%S %p"), "seconds_to_midnight": max(0, int((next_midnight - now_bd).total_seconds())), "accounts": out, "total_accounts": len(out), "logs": activity_logs[-40:]})
 
 @app.route("/api/otp/request", methods=["POST"])
 def api_otp_request():
-    data = request.json or {}
-    phone = (data.get("phone") or "").strip()
+    data = request.json or {}; phone = (data.get("phone") or "").strip()
     if not phone: return jsonify({"success": False, "message": "phone required"}), 400
-    client = MyRobiClient(phone)
-    ok, msg = client.request_otp()
+    client = MyRobiClient(phone); ok, msg = client.request_otp()
     return jsonify({"success": ok, "message": msg, "msisdn": client.msisdn})
 
 @app.route("/api/otp/verify", methods=["POST"])
 def api_otp_verify():
-    data = request.json or {}
-    phone = (data.get("phone") or "").strip()
-    otp = (data.get("otp") or "").strip()
+    data = request.json or {}; phone = (data.get("phone") or "").strip(); otp = (data.get("otp") or "").strip()
     if not phone or not otp: return jsonify({"success": False, "message": "phone and otp required"}), 400
-    client = MyRobiClient(phone)
-    ok, msg = client.verify_otp(otp)
+    client = MyRobiClient(phone); ok, msg = client.verify_otp(otp)
     if not ok: return jsonify({"success": False, "message": msg}), 400
     
-    accounts = load_accounts()
-    existing = accounts.get(client.msisdn, {})
-    accounts[client.msisdn] = {
-        "msisdn": client.msisdn, "access_token": client.access_token, "refresh_token": client.refresh_token,
-        "device_id": client.device_id, "expire_at": client.expire_at,
-        "last_login": get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD"),
-        "claim_history": existing.get("claim_history", []), "coins_balance": existing.get("coins_balance", 0),
-    }
-    save_accounts(accounts)
-    return jsonify({"success": True, "message": "Login successful, account saved."})
+    accounts = load_accounts(); existing = accounts.get(client.msisdn, {})
+    accounts[client.msisdn] = {"msisdn": client.msisdn, "access_token": client.access_token, "refresh_token": client.refresh_token, "device_id": client.device_id, "expire_at": client.expire_at, "last_login": get_bd_now().strftime("%Y-%m-%d %I:%M:%S %p BD"), "claim_history": existing.get("claim_history", []), "coins_balance": existing.get("coins_balance", 0)}
+    save_accounts(accounts); return jsonify({"success": True, "message": "Login successful, account saved."})
 
 @app.route("/api/claim/all", methods=["POST"])
-def api_claim_all():
-    return jsonify({"success": True, "results": run_all_claims()})
+def api_claim_all(): return jsonify({"success": True, "results": run_all_claims()})
 
 @app.route("/api/claim/<phone>", methods=["POST"])
 def api_claim_single(phone):
-    accounts = load_accounts()
-    msisdn = normalize_msisdn(phone)
+    accounts = load_accounts(); msisdn = normalize_msisdn(phone)
     if msisdn not in accounts: return jsonify({"success": False, "message": "not found"}), 404
-    try:
-        client = MyRobiClient(msisdn, accounts[msisdn])
-        return jsonify({"success": True, "result": process_account_claim(client)})
+    try: return jsonify({"success": True, "result": process_account_claim(MyRobiClient(msisdn, accounts[msisdn]))})
     except Exception as e: return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route("/api/tokens/refresh", methods=["POST"])
 def api_refresh_tokens():
-    accounts = load_accounts()
-    refreshed = 0
+    accounts = load_accounts(); refreshed = 0
     for msisdn, acc in accounts.items():
         client = MyRobiClient(msisdn, acc)
         if client.refresh_auth_token()[0]:
             accounts[msisdn].update({"access_token": client.access_token, "refresh_token": client.refresh_token, "expire_at": client.expire_at})
             refreshed += 1
-    save_accounts(accounts)
-    return jsonify({"success": True, "message": f"Refreshed {refreshed}/{len(accounts)}"})
+    save_accounts(accounts); return jsonify({"success": True, "message": f"Refreshed {refreshed}/{len(accounts)}"})
 
 @app.route("/api/account/delete", methods=["POST"])
 def api_delete_account():
-    data = request.json or {}
-    msisdn = normalize_msisdn(data.get("phone", ""))
+    data = request.json or {}; msisdn = normalize_msisdn(data.get("phone", ""))
     accounts = load_accounts()
     if msisdn in accounts:
-        del accounts[msisdn]
-        save_accounts(accounts)
+        del accounts[msisdn]; save_accounts(accounts)
         return jsonify({"success": True, "message": f"{msisdn} removed"})
     return jsonify({"success": False, "message": "not found"}), 404
 
 @app.route("/api/accounts/download")
 def api_accounts_download():
-    if os.path.exists(ACCOUNTS_FILE):
-        return send_file(ACCOUNTS_FILE, mimetype="application/json", as_attachment=True, download_name="accounts.json")
+    if os.path.exists(ACCOUNTS_FILE): return send_file(ACCOUNTS_FILE, mimetype="application/json", as_attachment=True, download_name="accounts.json")
     return jsonify({"success": False, "message": "no accounts.json"}), 404
+
+@app.route("/api/accounts/upload", methods=["POST"])
+def api_accounts_upload():
+    if 'file' not in request.files: return jsonify({"success": False, "message": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '' or not file.filename.endswith('.json'): return jsonify({"success": False, "message": "Invalid file"}), 400
+    try:
+        data = json.load(file)
+        if isinstance(data, dict) or isinstance(data, list):
+            save_accounts(data); add_log("Accounts imported via JSON.", "SUCCESS")
+            return jsonify({"success": True, "message": "Accounts imported."})
+    except Exception as e: return jsonify({"success": False, "message": f"Invalid JSON: {e}"}), 400
+    return jsonify({"success": False, "message": "Invalid file"}), 400
 
 @app.route("/api/diagnose")
 def api_diagnose():
-    results = {}
-    dummy = MyRobiClient("8801700000000")
+    results = {}; dummy = MyRobiClient("8801700000000")
     for key in ("otp_request", "otp_verify", "token_refresh", "profile", "points_balance", "tasks_list", "checkin", "claim_task", "rewards_list", "history"):
         try:
             r = dummy.session.get(dummy._url(key), timeout=10, allow_redirects=False)
             results[key] = {"url": dummy._url(key), "status": r.status_code, "verdict": "OK" if r.status_code < 500 and r.status_code != 404 else "WRONG PATH", "body": (r.text[:200] if r.text else "")}
-        except Exception as e:
-            results[key] = {"url": dummy._url(key), "error": str(e)}
+        except Exception as e: results[key] = {"url": dummy._url(key), "error": str(e)}
     return jsonify({"success": True, "base_url": ROBI_ENDPOINTS["base"], "results": results})
 
 @app.route("/api/cron/claim")
 def api_cron_claim():
     secret = CONFIG["CRON_SECRET"]
-    if secret and (request.headers.get("X-Cron-Secret") or request.args.get("secret")) != secret:
-        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    if secret and (request.headers.get("X-Cron-Secret") or request.args.get("secret")) != secret: return jsonify({"success": False, "message": "Unauthorized"}), 401
     return jsonify({"success": True, "results": run_all_claims()})
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=CONFIG["PORT"])
+if __name__ == "__main__": app.run(host="0.0.0.0", port=CONFIG["PORT"])
