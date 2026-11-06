@@ -1,6 +1,5 @@
 # language: Python, file: app.py, target: My Robi auto-claim hub
-# Updated base URL: myrobi-prod.robi.com.bd
-# Includes debug logging for OTP requests to trace why SMS is not arriving.
+# Added custom cookie/header support to bypass F5 WAF on Cloud IPs.
 
 import os
 import sys
@@ -12,7 +11,6 @@ import threading
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple, List, Dict, Any
 
-# curl_cffi ইমপোর্ট (TLS ফিঙ্গারপ্রিন্ট বাইপাসের জন্য)
 from curl_cffi import requests
 from flask import Flask, request, jsonify, send_file
 
@@ -23,10 +21,8 @@ CONFIG = {
     "CRON_SECRET":     os.environ.get("CRON_SECRET", ""),
     "PORT":            int(os.environ.get("PORT", "8080")),
 
-    # নতুন প্রোডাকশন হোস্ট
     "ROBI_BASE_URL":       os.environ.get("ROBI_BASE_URL",       "https://myrobi-prod.robi.com.bd"),
     
-    # পাথগুলো (Reqable থেকে আসলটা পেলে এখানে বদলে দেবেন)
     "ROBI_OTP_REQUEST":    os.environ.get("ROBI_OTP_REQUEST",    "/api/v1/user/otp/request"),
     "ROBI_OTP_VERIFY":     os.environ.get("ROBI_OTP_VERIFY",     "/api/v1/user/otp/verify"),
     "ROBI_TOKEN_REFRESH":  os.environ.get("ROBI_TOKEN_REFRESH",  "/api/v1/auth/token/refresh"),
@@ -39,10 +35,26 @@ CONFIG = {
     "ROBI_REDEEM":         os.environ.get("ROBI_REDEEM",         "/api/v1/rewards/redeem"),
     "ROBI_HISTORY":        os.environ.get("ROBI_HISTORY",        "/api/v1/points/history"),
 
-    "ROBI_UA":             os.environ.get("ROBI_UA",             "MyRobi/4.8.2 (Android 13; SM-G991B)"),
+    # Custom Headers
+    "ROBI_UA":             os.environ.get("ROBI_UA",             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36"),
     "ROBI_MSISDN_HEADER":  os.environ.get("ROBI_MSISDN_HEADER",  "X-MSISDN"),
     "ROBI_DEVICE_HEADER":  os.environ.get("ROBI_DEVICE_HEADER",  "X-Device-Id"),
     "ROBI_APP_VERSION":    os.environ.get("ROBI_APP_VERSION",    "4.8.2"),
+    
+    # Paste your F5 cookies here (from the log)
+    "ROBI_COOKIES":        os.environ.get("ROBI_COOKIES", "f5_cspm=1234; f5avraaaaaaaaaaaaaaaa_session_=KOHBEFFIFFHHJDDIDNJOOLLDEFLNBDPLJHIPKDEGNAGAOKKDKFCLJBNECPFBJPEAIFIDLNOOFDMNLFMJCJMAOJLCNELJPHILEKMOPNGLGKKOIOALIABNHICKNEJAANPH; deviceId=1d35803f-3c8f-4f1b-a9d8-0d962a998e5b; BIGipServerpool_revamp_robi=!bx6ZM/pRvE8BvCm+eFm5G6nnyWNgmCO9AR4A9lFiX46S5Iz/zCyn44kIjwqZ6aUddIbRc0BHJAr37pI=; NEXT_LOCALE=en; mui-mode=dark; TS01a3f0f7=01c9bf80bbdcad91226628fabb14f70951c06f9b4838ecd9934af95b94284a2172f6ed829a8030087531ad932eda7c15e8071c942c23083d22e22c5b7cb8e377484ed5f1195390a859268b96b093c526e8d3c67ef8304570053d06cde1974496d5cc3fd169d3b836daa9b51eacf6c2f3faa649a511733fb072e8bb57a873da5564528c6ceb73cfc470d1fa16ee6bc9bd093174626f50f1733d7215535626fb47f5bf7557339cf8afbe6f9c6b7f066e6ffdae215add"),
+
+    # Custom Extra Headers (from the log)
+    "ROBI_EXTRA_HEADERS": {
+        "sec-ch-ua": '"Not:A-Brand";v="8", "Chromium";v="156", "Google Chrome";v="156"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "Referer": "https://www.robi.com.bd/en",
+        "Origin": "https://www.robi.com.bd"
+    }
 }
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(sys.stdout)])
@@ -145,7 +157,6 @@ class MyRobiClient:
         self.device_id = self.data.get("device_id") or get_device_id(self.msisdn)
         self.expire_at = self.data.get("expire_at", 0)
         
-        # curl_cffi সেশন ব্রাউজারের TLS ফিঙ্গারপ্রিন্ট (impersonate) ব্যবহার করছে
         self.session = requests.Session(impersonate="chrome110") 
         self._set_headers()
 
@@ -161,7 +172,18 @@ class MyRobiClient:
         }
         if self.access_token:
             headers["Authorization"] = f"Bearer {self.access_token}"
+            
+        # WAF Headers Inject
+        headers.update(CONFIG["ROBI_EXTRA_HEADERS"])
         self.session.headers.update(headers)
+        
+        # WAF Cookies Inject
+        cookie_str = CONFIG["ROBI_COOKIES"]
+        if cookie_str:
+            for cookie in cookie_str.split(";"):
+                if "=" in cookie:
+                    k, v = cookie.strip().split("=", 1)
+                    self.session.cookies.set(k, v)
 
     def _url(self, key: str) -> str: return ROBI_ENDPOINTS["base"] + ROBI_ENDPOINTS[key]
     def _get(self, key: str, **kw) -> requests.Response: return self.session.get(self._url(key), timeout=20, **kw)
@@ -191,7 +213,6 @@ class MyRobiClient:
 
     def request_otp(self) -> Tuple[bool, str]:
         try:
-            # পেলোডে ডিভাইস আইডি এবং অ্যাপ ভার্সন যোগ করা হলো
             payload = {
                 "msisdn": self.msisdn,
                 "device_id": self.device_id,
@@ -199,10 +220,8 @@ class MyRobiClient:
             }
             resp = self._post("otp_request", json=payload)
             
-            # Render লগে রেসপন্স দেখার জন্য
             print(f"[DEBUG OTP REQUEST] URL: {self._url('otp_request')}")
-            print(f"[DEBUG OTP REQUEST] Payload: {payload}")
-            print(f"[DEBUG OTP REQUEST] Status: {resp.status_code}, Body: {resp.text}")
+            print(f"[DEBUG OTP REQUEST] Status: {resp.status_code}, Body: {resp.text[:300]}")
             
             if resp.status_code in (200, 201):
                 try:
@@ -227,8 +246,7 @@ class MyRobiClient:
                 "device_name": "Samsung"
             }
             resp = self._post("otp_verify", json=payload)
-            print(f"[DEBUG OTP VERIFY] URL: {self._url('otp_verify')}")
-            print(f"[DEBUG OTP VERIFY] Status: {resp.status_code}, Body: {resp.text}")
+            print(f"[DEBUG OTP VERIFY] Status: {resp.status_code}, Body: {resp.text[:300]}")
             
             if resp.status_code == 200:
                 d = resp.json()
@@ -419,8 +437,20 @@ def api_diagnose():
     for key in ("otp_request", "otp_verify", "token_refresh", "profile", "points_balance", "tasks_list", "checkin", "claim_task", "rewards_list", "history"):
         try:
             r = dummy.session.get(dummy._url(key), timeout=10, allow_redirects=False)
-            results[key] = {"url": dummy._url(key), "status": r.status_code, "verdict": "OK" if r.status_code < 500 and r.status_code != 404 else "WRONG PATH", "body": (r.text[:200] if r.text else "")}
-        except Exception as e: results[key] = {"url": dummy._url(key), "error": str(e)}
+            body_text = r.text or ""
+            
+            if "Request Rejected" in body_text or "support ID is" in body_text:
+                verdict = "WAF BLOCKED (Cloud IP)"
+            elif r.status_code == 404:
+                verdict = "WRONG PATH"
+            elif r.status_code == 200:
+                verdict = "OK (Valid Path)"
+            else:
+                verdict = f"UNKNOWN ({r.status_code})"
+
+            results[key] = {"url": dummy._url(key), "status": r.status_code, "verdict": verdict, "body": body_text[:150]}
+        except Exception as e: 
+            results[key] = {"url": dummy._url(key), "error": str(e)}
     return jsonify({"success": True, "base_url": ROBI_ENDPOINTS["base"], "results": results})
 
 @app.route("/api/cron/claim")
