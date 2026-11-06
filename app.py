@@ -22,7 +22,7 @@ CONFIG = {
     "PORT":            int(os.environ.get("PORT", "8080")),
 
     "ROBI_BASE_URL":       os.environ.get("ROBI_BASE_URL",       "https://webapi.robi.com.bd"),
-    "ROBI_OTP_REQUEST": os.environ.get("ROBI_OTP_REQUEST", "/v1/otp/request"),
+    "ROBI_OTP_REQUEST": os.environ.get("ROBI_OTP_REQUEST", "/user/otp-login"),
     "ROBI_OTP_VERIFY":     os.environ.get("ROBI_OTP_VERIFY",     "/v1/auth/otp/verify"),
     "ROBI_TOKEN_REFRESH":  os.environ.get("ROBI_TOKEN_REFRESH",  "/v1/auth/token/refresh"),
     "ROBI_PROFILE":        os.environ.get("ROBI_PROFILE",        "/v1/user/profile"),
