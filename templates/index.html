@@ -1,82 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Robi Auto-Claim Hub</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Robi Auto-Claim Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root{--bg-dark:#0d0608;--card-bg:rgba(30,10,15,0.72);--card-border:rgba(255,255,255,0.08);--primary:#e60012;--primary-glow:rgba(230,0,18,0.38);--accent:#ff2e63;--success:#10b981;--warning:#f59e0b;--text-main:#f8fafc;--text-muted:#a89ba0;}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Outfit',sans-serif;}
 body{background:radial-gradient(circle at 10% 15%,rgba(230,0,18,0.14),transparent 40%),radial-gradient(circle at 90% 85%,rgba(255,46,99,0.10),transparent 40%),var(--bg-dark);color:var(--text-main);min-height:100vh;padding:24px;}
-.container{max-width:1180px;margin:0 auto;}
-.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:20px 28px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;margin-bottom:26px;backdrop-filter:blur(14px);}
-.brand{display:flex;align-items:center;gap:14px;}
-.brand-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 22px var(--primary-glow);}
-.brand h1{font-size:22px;font-weight:700;}
-.brand p{font-size:12px;color:var(--text-muted);}
-.header-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.container{max-width:1180px;margin:0 auto;}.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:20px 28px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;margin-bottom:26px;backdrop-filter:blur(14px);}
+.brand{display:flex;align-items:center;gap:14px;}.brand-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 22px var(--primary-glow);}
+.brand h1{font-size:22px;font-weight:700;}.brand p{font-size:12px;color:var(--text-muted);}.header-actions{display:flex;gap:10px;flex-wrap:wrap;}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s ease;text-decoration:none;}
-.btn-primary{background:linear-gradient(135deg,var(--primary),#b8000e);color:#fff;box-shadow:0 4px 14px var(--primary-glow);}
-.btn-primary:hover{transform:translateY(-1px);}
-.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}
-.btn-outline{background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid var(--card-border);}
-.btn-outline:hover{background:rgba(255,255,255,0.10);}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-bottom:26px;}
-.stat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:20px;display:flex;gap:16px;align-items:center;}
-.stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(230,0,18,0.14);color:var(--primary);}
-.stat h3{font-size:24px;font-weight:700;}
-.stat p{font-size:12px;color:var(--text-muted);margin-top:2px;}
-.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-.account-cards{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:32px;}
-.account-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:22px;transition:all .25s;}
-.account-card:hover{border-color:rgba(230,0,18,0.35);box-shadow:0 10px 28px rgba(0,0,0,0.28);}
-.card-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
-.acc-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.acc-line h2{font-size:19px;font-weight:700;letter-spacing:.4px;}
-.badge{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;}
-.badge-success{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);}
-.badge-pending{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);}
-.points-display{display:flex;align-items:baseline;gap:8px;padding:14px 16px;background:rgba(230,0,18,0.08);border:1px solid rgba(230,0,18,0.25);border-radius:12px;margin-bottom:14px;}
-.points-display .val{font-size:26px;font-weight:800;color:var(--accent);}
-.points-display .label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
-.card-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;font-size:12px;color:var(--text-muted);}
-.history-list{font-size:12px;color:var(--text-muted);line-height:1.6;max-height:120px;overflow-y:auto;margin-top:6px;}
-.logs{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:20px;}
-.log-terminal{background:#08050a;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:14px;max-height:260px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px;}
-.log-line{padding:2px 0;line-height:1.55;}
-.log-time{color:#575757;}
-.log-SUCCESS{color:#34d399;font-weight:600;}
-.log-INFO{color:#60a5fa;}
-.log-WARN{color:#fbbf24;}
-.log-ERROR{color:#f87171;font-weight:600;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:1000;}
-.modal{background:#140a10;border:1px solid var(--card-border);border-radius:22px;width:100%;max-width:420px;padding:26px;}
-.modal h2{font-size:19px;margin-bottom:6px;}
-.modal p{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
-.form-group{margin-bottom:16px;}
-.form-label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:#cbd5e1;}
-.form-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--card-border);border-radius:12px;padding:12px 14px;color:#fff;font-size:15px;outline:none;}
-.form-input:focus{border-color:var(--primary);box-shadow:0 0 10px var(--primary-glow);}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;}
-.empty-card{text-align:center;padding:38px;color:var(--text-muted);}
-@media (max-width:640px){.header{flex-direction:column;align-items:flex-start;}}
-</style>
-</head>
+.btn-primary{background:linear-gradient(135deg,var(--primary),#b8000e);color:#fff;box-shadow:0 4px 14px var(--primary-glow);}.btn-primary:hover{transform:translateY(-1px);}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}.btn-outline{background:rgba(255,255,255,0.05);color:var(--text-main);border:1px solid var(--card-border);}.btn-outline:hover{background:rgba(255,255,255,0.10);}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-bottom:26px;}.stat{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:20px;display:flex;gap:16px;align-items:center;}
+.stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(230,0,18,0.14);color:var(--primary);}.stat h3{font-size:24px;font-weight:700;}.stat p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px;}.account-cards{display:grid;grid-template-columns:1fr;gap:18px;margin-bottom:32px;}
+.account-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:22px;transition:all .25s;}.account-card:hover{border-color:rgba(230,0,18,0.35);box-shadow:0 10px 28px rgba(0,0,0,0.28);}
+.card-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;}.acc-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}.acc-line h2{font-size:19px;font-weight:700;letter-spacing:.4px;}
+.badge{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;}.badge-success{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);}.badge-pending{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);}
+.points-display{display:flex;align-items:baseline;gap:8px;padding:14px 16px;background:rgba(230,0,18,0.08);border:1px solid rgba(230,0,18,0.25);border-radius:12px;margin-bottom:14px;}.points-display .val{font-size:26px;font-weight:800;color:var(--accent);}.points-display .label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.card-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px;font-size:12px;color:var(--text-muted);}.history-list{font-size:12px;color:var(--text-muted);line-height:1.6;max-height:120px;overflow-y:auto;margin-top:6px;}
+.logs{background:var(--card-bg);border:1px solid var(--card-border);border-radius:20px;padding:20px;}.log-terminal{background:#08050a;border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:14px;max-height:260px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px;}
+.log-line{padding:2px 0;line-height:1.55;}.log-time{color:#575757;}.log-SUCCESS{color:#34d399;font-weight:600;}.log-INFO{color:#60a5fa;}.log-WARN{color:#fbbf24;}.log-ERROR{color:#f87171;font-weight:600;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:1000;}.modal{background:#140a10;border:1px solid var(--card-border);border-radius:22px;width:100%;max-width:420px;padding:26px;}.modal h2{font-size:19px;margin-bottom:6px;}.modal p{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+.form-group{margin-bottom:16px;}.form-label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:#cbd5e1;}.form-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--card-border);border-radius:12px;padding:12px 14px;color:#fff;font-size:15px;outline:none;}.form-input:focus{border-color:var(--primary);box-shadow:0 0 10px var(--primary-glow);}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;}.empty-card{text-align:center;padding:38px;color:var(--text-muted);}@media (max-width:640px){.header{flex-direction:column;align-items:flex-start;}}
+</style></head>
 <body>
 <div class="container">
   <header class="header">
-    <div class="brand">
-      <div class="brand-icon"><i data-lucide="zap" style="color:#fff;width:24px;height:24px;"></i></div>
-      <div><h1>My Robi Auto-Claim Hub</h1><p>Monthly Coin Collector · 24/7 Cloud</p></div>
-    </div>
+    <div class="brand"><div class="brand-icon"><i data-lucide="zap" style="color:#fff;width:24px;height:24px;"></i></div><div><h1>My Robi Auto-Claim Hub</h1><p>Monthly Coin Collector · 24/7 Cloud</p></div></div>
     <div class="header-actions">
       <button class="btn btn-primary" onclick="openModal()"><i data-lucide="plus-circle" style="width:16px;"></i> Add SIM</button>
       <button class="btn btn-success" onclick="claimAll(event)"><i data-lucide="gift" style="width:16px;"></i> Collect All Coins</button>
-      <button class="btn btn-outline" onclick="refreshTokens()"><i data-lucide="refresh-cw" style="width:16px;"></i> Refresh Tokens</button>
+      <button class="btn btn-outline" onclick="refreshTokens()"><i data-lucide="refresh-cw" style="width:16px;"></i> Refresh</button>
       <a class="btn btn-outline" href="/api/accounts/download" download="accounts.json"><i data-lucide="download" style="width:16px;"></i> Export</a>
+      <button class="btn btn-outline" onclick="document.getElementById('file-upload').click()"><i data-lucide="upload" style="width:16px;"></i> Import</button>
+      <input type="file" id="file-upload" style="display:none" accept=".json" onchange="uploadAccounts()">
     </div>
   </header>
 
@@ -89,23 +50,18 @@ body{background:radial-gradient(circle at 10% 15%,rgba(230,0,18,0.14),transparen
   <div class="section-title"><i data-lucide="layout-grid" style="color:var(--primary);"></i> Connected SIMs</div>
   <div class="account-cards" id="accounts"><div class="empty-card">Loading accounts…</div></div>
 
-  <div class="logs">
-    <div class="section-title" style="margin-bottom:12px;"><i data-lucide="terminal" style="color:var(--accent);"></i> Live Logs</div>
-    <div class="log-terminal" id="log-terminal"><div class="log-line">Waiting…</div></div>
-  </div>
+  <div class="logs"><div class="section-title" style="margin-bottom:12px;"><i data-lucide="terminal" style="color:var(--accent);"></i> Live Logs</div><div class="log-terminal" id="log-terminal"><div class="log-line">Waiting…</div></div></div>
 </div>
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <div id="step-phone">
-      <h2>Add Robi SIM</h2>
-      <p>Enter your 11-digit Robi number (018… / 016…).</p>
+      <h2>Add Robi SIM</h2><p>Enter your 11-digit Robi number.</p>
       <div class="form-group"><label class="form-label">Phone</label><input id="phone" class="form-input" placeholder="01xxxxxxxxx"></div>
       <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" id="btn-send" onclick="sendOtp()">Send OTP</button></div>
     </div>
     <div id="step-otp" style="display:none;">
-      <h2>Enter OTP</h2>
-      <p>Code sent to <b id="show-phone"></b>.</p>
+      <h2>Enter OTP</h2><p>Code sent to <b id="show-phone"></b>.</p>
       <div class="form-group"><label class="form-label">OTP</label><input id="otp" class="form-input" maxlength="8" style="letter-spacing:4px;text-align:center;font-size:20px;"></div>
       <div class="modal-actions"><button class="btn btn-outline" onclick="backStep()">Back</button><button class="btn btn-success" id="btn-verify" onclick="verifyOtp()">Verify</button></div>
     </div>
@@ -120,63 +76,44 @@ function backStep(){document.getElementById('step-phone').style.display='block';
 async function sendOtp(){
   const phone=document.getElementById('phone').value.trim(); if(!phone){alert('phone required');return;}
   const b=document.getElementById('btn-send');b.disabled=true;b.innerText='Sending…';
-  try{
-    const r=await fetch('/api/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
-    const d=await r.json(); if(d.success){activePhone=d.msisdn||phone;document.getElementById('show-phone').innerText=activePhone;document.getElementById('step-phone').style.display='none';document.getElementById('step-otp').style.display='block';} else alert(d.message);
-  }catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Send OTP';}
+  try{const r=await fetch('/api/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});const d=await r.json();if(d.success){activePhone=d.msisdn||phone;document.getElementById('show-phone').innerText=activePhone;document.getElementById('step-phone').style.display='none';document.getElementById('step-otp').style.display='block';}else alert(d.message);}catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Send OTP';}
 }
 async function verifyOtp(){
   const otp=document.getElementById('otp').value.trim(); if(!otp){alert('OTP required');return;}
   const b=document.getElementById('btn-verify');b.disabled=true;b.innerText='Verifying…';
-  try{
-    const r=await fetch('/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:activePhone,otp})});
-    const d=await r.json(); if(d.success){closeModal();fetchStatus();}else alert(d.message);
-  }catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Verify';}
+  try{const r=await fetch('/api/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:activePhone,otp})});const d=await r.json();if(d.success){closeModal();fetchStatus();}else alert(d.message);}catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Verify';}
 }
 async function claimAll(ev){
   const b=ev.target.closest('button');b.disabled=true;b.innerText='Collecting…';
-  try{const r=await fetch('/api/claim/all',{method:'POST'});alert('Coin collection sweep complete.');fetchStatus();}catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Collect All Coins';}
+  try{await fetch('/api/claim/all',{method:'POST'});alert('Coin collection sweep complete.');fetchStatus();}catch(e){alert('Error: '+e);}finally{b.disabled=false;b.innerText='Collect All Coins';}
 }
-async function claimOne(phone){
-  try{const r=await fetch(`/api/claim/${phone}`,{method:'POST'});const d=await r.json();if(d.success&&d.result){alert(`Collected coins! Total gained: ${d.result.points_gained}`);}else alert(d.message||'done');fetchStatus();}catch(e){alert('Error: '+e);}
-}
+async function claimOne(phone){try{const r=await fetch(`/api/claim/${phone}`,{method:'POST'});const d=await r.json();if(d.success&&d.result){alert(`Collected coins! Total gained: ${d.result.points_gained}`);}else alert(d.message||'done');fetchStatus();}catch(e){alert('Error: '+e);}}
 async function refreshTokens(){try{const r=await fetch('/api/tokens/refresh',{method:'POST'});const d=await r.json();alert(d.message);fetchStatus();}catch(e){alert('Error: '+e);}}
 async function deleteAcc(phone){if(!confirm(`Remove ${phone}?`)) return;try{const r=await fetch('/api/account/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});const d=await r.json();alert(d.message);fetchStatus();}catch(e){alert('Error: '+e);}}
+async function uploadAccounts() {
+  const fileInput = document.getElementById('file-upload'); const file = fileInput.files[0]; if (!file) return;
+  const formData = new FormData(); formData.append('file', file);
+  try { const r = await fetch('/api/accounts/upload', { method: 'POST', body: formData }); const d = await r.json(); alert(d.message); fetchStatus(); } catch (e) { alert('Error: ' + e); }
+  fileInput.value = '';
+}
 function updateCountdown(){if(secondsLeft<=0){document.getElementById('countdown').innerText='00h 00m 00s';return;}const h=Math.floor(secondsLeft/3600),m=Math.floor((secondsLeft%3600)/60),s=secondsLeft%60;document.getElementById('countdown').innerText=`${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;}
 setInterval(()=>{if(secondsLeft>0){secondsLeft--;updateCountdown();}},1000);
 
 async function fetchStatus(){
   try{
     const r=await fetch('/api/status');const d=await r.json();
-    document.getElementById('bd-time').innerText=d.current_bd_time;
-    document.getElementById('total-sims').innerText=d.total_accounts+' SIMs';
-    secondsLeft=d.seconds_to_midnight;updateCountdown();
-    const c=document.getElementById('accounts');
+    document.getElementById('bd-time').innerText=d.current_bd_time;document.getElementById('total-sims').innerText=d.total_accounts+' SIMs';
+    secondsLeft=d.seconds_to_midnight;updateCountdown();const c=document.getElementById('accounts');
     if(d.accounts.length===0){c.innerHTML='<div class="account-card empty-card"><p>No SIMs connected yet.</p><button class="btn btn-primary" style="margin-top:14px;" onclick="openModal()">Add First SIM</button></div>';return;}
     c.innerHTML=d.accounts.map(a=>{
       const badge=a.is_done_today?`<span class="badge badge-success"><i data-lucide="check-circle" style="width:14px;"></i> Coins Collected Today</span>`:`<span class="badge badge-pending"><i data-lucide="sparkles" style="width:14px;"></i> Ready for Coins</span>`;
       const hist=(a.history||[]).length?a.history.slice(-6).map(h=>`<div>&bull; <b>${h.time}</b> — ${h.action} — ${h.status}</div>`).join(''):'<div>No history yet.</div>';
-      return `
-        <div class="account-card">
-          <div class="card-top">
-            <div class="acc-line"><i data-lucide="sim" style="color:var(--primary);width:20px;height:20px;"></i><h2>${a.msisdn}</h2>${badge}</div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="claimOne('${a.msisdn}')">Collect Coins</button>
-              <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;color:#f87171;" onclick="deleteAcc('${a.msisdn}')">Delete</button>
-            </div>
-          </div>
-          <div class="points-display">
-            <span class="label">Total Robi Coins</span>
-            <span class="val">${a.coins_balance ?? 0}</span>
-          </div>
-          <div class="card-footer">
-            <div><b>Coin History</b><div class="history-list">${hist}</div></div>
-            <div style="text-align:right;"><div>Last collected: <b>${a.last_claim_at||'—'}</b></div><div>Next reset: <b>12:00 AM BD</b></div></div>
-          </div>
-        </div>`;
+      return `<div class="account-card"><div class="card-top"><div class="acc-line"><i data-lucide="sim" style="color:var(--primary);width:20px;height:20px;"></i><h2>${a.msisdn}</h2>${badge}</div>
+      <div style="display:flex;gap:8px;"><button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="claimOne('${a.msisdn}')">Collect Coins</button><button class="btn btn-outline" style="padding:6px 12px;font-size:12px;color:#f87171;" onclick="deleteAcc('${a.msisdn}')">Delete</button></div></div>
+      <div class="points-display"><span class="label">Total Robi Coins</span><span class="val">${a.coins_balance ?? 0}</span></div>
+      <div class="card-footer"><div><b>Coin History</b><div class="history-list">${hist}</div></div><div style="text-align:right;"><div>Last collected: <b>${a.last_claim_at||'—'}</b></div><div>Next reset: <b>12:00 AM BD</b></div></div></div></div>`;
     }).join('');
-    lucide.createIcons();
-    const lt=document.getElementById('log-terminal');lt.innerHTML=(d.logs||[]).map(l=>`<div class="log-line"><span class="log-time">[${l.timestamp}]</span> <span class="log-${l.level}">[${l.level}]</span> ${l.message}</div>`).join('');lt.scrollTop=lt.scrollHeight;
+    lucide.createIcons();const lt=document.getElementById('log-terminal');lt.innerHTML=(d.logs||[]).map(l=>`<div class="log-line"><span class="log-time">[${l.timestamp}]</span> <span class="log-${l.level}">[${l.level}]</span> ${l.message}</div>`).join('');lt.scrollTop=lt.scrollHeight;
   }catch(e){console.error(e);}
 }
 setInterval(fetchStatus,60000);fetchStatus();
