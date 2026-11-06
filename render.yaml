@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: myrobi-auto-claim
+    env: docker
+    dockerfilePath: ./Dockerfile
+    disk:
+      name: robi-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 8080
