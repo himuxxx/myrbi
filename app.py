@@ -1,6 +1,6 @@
 # language: Python, file: app.py, target: My Robi auto-claim hub
 # Updated base URL: myrobi-prod.robi.com.bd
-# Uses curl_cffi to bypass TLS fingerprinting (WAF / anti-bot).
+# Includes debug logging for OTP requests to trace why SMS is not arriving.
 
 import os
 import sys
@@ -12,7 +12,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple, List, Dict, Any
 
-# curl_cffi ইমপোর্ট করা হলো requests এর জায়গায়
+# curl_cffi ইমপোর্ট (TLS ফিঙ্গারপ্রিন্ট বাইপাসের জন্য)
 from curl_cffi import requests
 from flask import Flask, request, jsonify, send_file
 
@@ -23,10 +23,10 @@ CONFIG = {
     "CRON_SECRET":     os.environ.get("CRON_SECRET", ""),
     "PORT":            int(os.environ.get("PORT", "8080")),
 
-    # নতুন হোস্ট URL
+    # নতুন প্রোডাকশন হোস্ট
     "ROBI_BASE_URL":       os.environ.get("ROBI_BASE_URL",       "https://myrobi-prod.robi.com.bd"),
     
-    # পাথগুলো Reqable ক্যাপচার থেকে পাওয়া পাথ দিয়ে আপডেট করুন
+    # পাথগুলো (Reqable থেকে আসলটা পেলে এখানে বদলে দেবেন)
     "ROBI_OTP_REQUEST":    os.environ.get("ROBI_OTP_REQUEST",    "/api/v1/user/otp/request"),
     "ROBI_OTP_VERIFY":     os.environ.get("ROBI_OTP_VERIFY",     "/api/v1/user/otp/verify"),
     "ROBI_TOKEN_REFRESH":  os.environ.get("ROBI_TOKEN_REFRESH",  "/api/v1/auth/token/refresh"),
@@ -191,16 +191,48 @@ class MyRobiClient:
 
     def request_otp(self) -> Tuple[bool, str]:
         try:
-            resp = self._post("otp_request", json={"msisdn": self.msisdn})
-            if resp.status_code in (200, 201): return True, "OTP sent"
+            # পেলোডে ডিভাইস আইডি এবং অ্যাপ ভার্সন যোগ করা হলো
+            payload = {
+                "msisdn": self.msisdn,
+                "device_id": self.device_id,
+                "app_version": ROBI_HEADERS["app_version"]
+            }
+            resp = self._post("otp_request", json=payload)
+            
+            # Render লগে রেসপন্স দেখার জন্য
+            print(f"[DEBUG OTP REQUEST] URL: {self._url('otp_request')}")
+            print(f"[DEBUG OTP REQUEST] Payload: {payload}")
+            print(f"[DEBUG OTP REQUEST] Status: {resp.status_code}, Body: {resp.text}")
+            
+            if resp.status_code in (200, 201):
+                try:
+                    body = resp.json()
+                    if body.get("success") is False or body.get("error"):
+                        return False, f"Robi rejected: {body.get('message', body)}"
+                except Exception:
+                    pass
+                return True, "OTP sent"
             return False, (resp.text[:300] or f"status {resp.status_code}")
-        except Exception as e: return False, str(e)
+        except Exception as e:
+            return False, str(e)
 
     def verify_otp(self, otp: str) -> Tuple[bool, str]:
         try:
-            resp = self._post("otp_verify", json={"msisdn": self.msisdn, "otp": str(otp).strip(), "device_id": self.device_id, "app_version": ROBI_HEADERS["app_version"]})
+            payload = {
+                "msisdn": self.msisdn,
+                "otp": str(otp).strip(),
+                "device_id": self.device_id,
+                "app_version": ROBI_HEADERS["app_version"],
+                "device_model": "SM-S901U1",
+                "device_name": "Samsung"
+            }
+            resp = self._post("otp_verify", json=payload)
+            print(f"[DEBUG OTP VERIFY] URL: {self._url('otp_verify')}")
+            print(f"[DEBUG OTP VERIFY] Status: {resp.status_code}, Body: {resp.text}")
+            
             if resp.status_code == 200:
-                d = resp.json(); nested = d.get("data") or {}
+                d = resp.json()
+                nested = d.get("data") or {}
                 self.access_token = d.get("access_token") or d.get("token") or nested.get("access_token")
                 self.refresh_token = d.get("refresh_token") or nested.get("refresh_token")
                 expires_in = d.get("expires_in") or nested.get("expires_in")
@@ -209,7 +241,8 @@ class MyRobiClient:
                 if not self.access_token: return False, f"no token: {resp.text[:100]}"
                 return True, "Login successful"
             return False, (resp.text[:300] or f"status {resp.status_code}")
-        except Exception as e: return False, str(e)
+        except Exception as e:
+            return False, str(e)
 
     def fetch_points_balance(self) -> dict:
         try:
